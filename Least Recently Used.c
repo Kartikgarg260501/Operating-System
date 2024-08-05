@@ -1,86 +1,87 @@
-#include<stdio.h>
-int findLRU(int time[], int n){
-	int i, minimum = time[0], pos = 0;
+#include <stdio.h>  // Standard input-output library
+#include <stdlib.h> // Standard library for memory allocation
 
-	for(i = 1; i < n; ++i){
-		if(time[i] < minimum){
-			minimum = time[i];
-			pos = i;
-		}
-	}
-
-	return pos;
+// Function to search for a page in the memory array
+int searchPage(int memory[], int n, int page) {
+    for (int i = 0; i < n; i++) {
+        if (memory[i] == page) { // If page is found in memory
+            return i; // Return the index where the page is found
+        }
+    }
+    return -1; // If page is not found, return -1
 }
 
-int main()
-{
-    int no_of_frames, no_of_pages, page_hits,frames[10], pages[30], counter = 0, time[10], flag1, flag2, i, j, pos, faults = 0;
-	printf("\n------------------------------------------------------------------------------------------------\n");
-
-	printf("\n Enter the number of pages : ");
-	scanf("%d", &no_of_pages);
-
-	printf("\n------------------------------------------------------------------------------------------------\n");
-
-    printf("\n Enter the Values of the Reference String : \n");
-
-    for(i = 0; i < no_of_pages; ++i)
-    {
-    	printf(" Value No. [%d] : ", i+ 1);
-    	scanf("%d", &pages[i]);
+// Function to find the Least Recently Used (LRU) page
+int findLRU(int time[], int n) {
+    int min = time[0], pos = 0; // Initialize minimum time and position
+    for (int i = 1; i < n; i++) {
+        if (time[i] < min) { // If a smaller time is found
+            min = time[i]; // Update minimum time
+            pos = i; // Update position of least recently used page
+        }
     }
-    printf("\n------------------------------------------------------------------------------------------------\n");
-
-    printf("\n Enter the number of frames : ");
-	scanf("%d", &no_of_frames);
-
-	printf("\n------------------------------------------------------------------------------------------------\n");
-	for(i = 0; i < no_of_frames; ++i){
-    	frames[i] = -1;
-    }
-    for(i = 0; i < no_of_pages; ++i){
-    	flag1 = flag2 = 0;
-    	for(j = 0; j < no_of_frames; ++j){
-    		if(frames[j] == pages[i]){
-	    		counter++;
-	    		time[j] = counter;
-	   			flag1 = flag2 = 1;
-	   			break;
-   			}
-    	}
-    	if(flag1 == 0){
-			for(j = 0; j < no_of_frames; ++j){
-	    		if(frames[j] == -1){
-	    			counter++;
-	    			faults++;
-	    			frames[j] = pages[i];
-	    			time[j] = counter;
-	    			flag2 = 1;
-	    			break;
-	    		}
-    		}
-    	}
-    	if(flag2 == 0){
-    		pos = findLRU(time, no_of_frames);
-    		counter++;
-    		faults++;
-    		frames[pos] = pages[i];
-    		time[pos] = counter;
-    	}
-    	printf("\n");
-    	for(j = 0; j < no_of_frames; ++j){
-    		printf(" %d\t", frames[j]);
-    	}
-	}
-      page_hits =  no_of_pages - faults;
-      printf("\n------------------------------------------------------------------------------------------------\n");
-      printf("\n Total Page Hits : %d\n", page_hits);
-      printf("\n Total Page Miss : %d\n", faults);
-
-      printf("\n Page Hit Ratio : %f\n", (double)page_hits/no_of_pages);
-      printf("\n Page Miss Ratio : %f\n",(double)faults/no_of_pages);
-
-      printf("\n------------------------------------------------------------------------------------------------\n");
-    return 0;
+    return pos; // Return the position of LRU page
 }
+
+// Function to implement LRU page replacement
+void lruPageReplacement(int pages[], int n, int capacity) {
+    int *memory = (int *)malloc(capacity * sizeof(int)); // Allocate memory for the pages in memory
+    int *time = (int *)malloc(capacity * sizeof(int)); // Allocate memory for tracking the time of each page
+    int count = 0, pageFaults = 0; // Initialize count of pages in memory and page faults
+    
+    // Initialize memory slots to -1 (indicating they are empty)
+    for (int i = 0; i < capacity; i++) {
+        memory[i] = -1;
+    }
+    
+    // Loop through each page in the sequence
+    for (int i = 0; i < n; i++) {
+        int pos = searchPage(memory, capacity, pages[i]); // Search for the current page in memory
+        
+        if (pos == -1) { // If page is not found in memory (page fault)
+            if (count < capacity) { // If there is still space in memory
+                memory[count] = pages[i]; // Place the page in memory
+                time[count] = i; // Record the time of insertion
+                count++; // Increment count of pages in memory
+            } else {
+                int lru = findLRU(time, capacity); // Find the LRU page
+                memory[lru] = pages[i]; // Replace LRU page with the current page
+                time[lru] = i; // Update the time of the new page
+            }
+            pageFaults++; // Increment page fault count
+        } else {
+            time[pos] = i; // If page is found, update its last used time
+        }
+        
+        // Print the current state of memory
+        printf("Memory state after accessing page %d: ", pages[i]);
+        for (int j = 0; j < capacity; j++) {
+            if (memory[j] != -1) { // Print page if it is in memory
+                printf("%d ", memory[j]);
+            } else {
+                printf("- "); // Print - if the slot is empty
+            }
+        }
+        printf("\n");
+    }
+    
+    // Print the total number of page faults
+    printf("Total page faults: %d\n", pageFaults);
+    
+    // Free the allocated memory
+    free(memory);
+    free(time);
+}
+
+int main() {
+    int pages[] = {7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2}; // Sequence of pages to be accessed
+    int n = sizeof(pages) / sizeof(pages[0]); // Calculate the number of pages
+    int capacity = 4; // Number of frames (slots) in memory
+    
+    // Call the LRU page replacement function
+    lruPageReplacement(pages, n, capacity);
+    
+    return 0; // Indicate successful execution
+}
+
 
